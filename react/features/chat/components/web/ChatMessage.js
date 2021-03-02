@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { toArray } from 'react-emoji-render';
-
+import ReactMarkdown from 'react-markdown';
 
 import { translate } from '../../../base/i18n';
 import { Linkify } from '../../../base/react';
@@ -16,6 +16,20 @@ import PrivateMessageButton from '../PrivateMessageButton';
  * Renders a single chat message.
  */
 class ChatMessage extends AbstractChatMessage<Props> {
+
+    /**
+     * Checks if the given string is a valid URL.
+     *
+     * @param {string} input - The inputstring given.
+     * @returns {boolean} True when the input is a valid string.
+     */
+    isValidUrl(input) {
+        const res = input.match(
+            /(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_+.~#?&/=]*)/g);
+
+        return res !== null;
+    }
+
     /**
      * Implements React's {@link Component#render()}.
      *
@@ -31,7 +45,12 @@ class ChatMessage extends AbstractChatMessage<Props> {
 
         content.forEach(i => {
             if (typeof i === 'string') {
-                processedMessage.push(<Linkify key = { i }>{ i }</Linkify>);
+                if (this.isValidUrl(i)) {
+                    processedMessage.push(<Linkify key = { i }>{i}</Linkify>);
+                } else {
+                    processedMessage.push(<ReactMarkdown key = { i }>{ i }</ReactMarkdown>);
+                }
+
             } else {
                 processedMessage.push(i);
             }
