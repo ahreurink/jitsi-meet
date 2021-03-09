@@ -1,6 +1,6 @@
 // @flow
 
-import { FieldTextStateless as TextField } from '@atlaskit/field-text';
+import Textfield from '@atlaskit/textfield';
 import React, { Component } from 'react';
 import type { Dispatch } from 'redux';
 
@@ -9,6 +9,7 @@ import { Dialog } from '../../base/dialog';
 import { translate } from '../../base/i18n';
 import { connect } from '../../base/redux';
 import { _cancelPasswordRequiredPrompt } from '../actions';
+import { IconAudioOnly, IconAudioOnlyOff } from '../../base/icons';
 
 /**
  * The type of the React {@code Component} props of
@@ -97,9 +98,12 @@ class PasswordRequiredPrompt extends Component<Props, State> {
     _renderBody() {
         return (
             <div>
-                <TextField
+                <Textfield
                     autoFocus = { true }
                     compact = { true }
+                    elemAfterInput = {
+                        <IconAudioOnly class = 'showPassword' />
+                    }
                     label = { this.props.t('dialog.passwordLabel') }
                     name = 'lockKey'
                     onChange = { this._onPasswordChanged }
