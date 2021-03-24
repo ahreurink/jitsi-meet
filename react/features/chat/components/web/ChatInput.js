@@ -7,7 +7,13 @@ import type { Dispatch } from 'redux';
 import { isMobileBrowser } from '../../../base/environment/utils';
 import { translate } from '../../../base/i18n';
 import { Icon, IconPlane, IconSmile } from '../../../base/icons';
+import { getParticipantById } from '../../../base/participants';
 import { connect } from '../../../base/redux';
+import { sendMessage, setPrivateMessageRecipient } from '../../actions.any';
+import {
+    _mapDispatchToProps,
+    _mapStateToProps
+} from '../AbstractChatPrivacyDialog';
 
 import SmileysPanel from './SmileysPanel';
 
@@ -31,6 +37,16 @@ type Props = {
      * Callback to invoke on message send.
      */
     onSend: Function,
+
+    /**
+     * List of participants.
+     */
+    participants: Object[],
+
+    /**
+     * Prop to be invoked when the user wants to set a private recipient.
+     */
+    _onSetMessageRecipient: Function,
 
     /**
      * Invoked to obtain translated strings.
@@ -210,6 +226,47 @@ class ChatInput extends Component<Props, State> {
      * @returns {void}
      */
     _onMessageChange(event) {
+        const participantsNames = this.props.participants.map(e => e.name);
+        const input = event.target.value;
+
+        if (input.startsWith('@')) {
+            let userFound = false;
+            const firstWordAfterAt = input.substring(1).split(' ')[0];
+
+            if (firstWordAfterAt === '') {
+                this.setState({ message: event.target.value });
+
+                return;
+            }
+
+            // Search partial
+            for (let i = 0; i < participantsNames.length; i++) {
+                const name = participantsNames[i];
+
+                // HINTING
+                if (name.includes(firstWordAfterAt)) {
+                    console.log(name);
+                    console.log('YAY WE ARE STILL WORTHY');
+
+                }
+            }
+
+            // Full, set recipient
+            for (let i = 0; i < participantsNames.length; i++) {
+                const name = participantsNames[i];
+
+                if (name === firstWordAfterAt) {
+                    console.log(`SET PARTICIPANT: ${name}`);
+                    console.log(this.props.participants.filter(e => e.name === name));
+                    this.props._onSetMessageRecipient(this.props.participants.filter(e => e.name === name));
+                    userFound = true;
+                    break;
+                }
+            }
+            if (!userFound) {
+                this.props._onSetMessageRecipient(null);
+            }
+        }
         this.setState({ message: event.target.value });
     }
 
@@ -258,6 +315,37 @@ class ChatInput extends Component<Props, State> {
     _setTextAreaRef(textAreaElement: ?HTMLTextAreaElement) {
         this._textArea = textAreaElement;
     }
+
+    /**
+     * Maps part of the props of this component to Redux actions.
+     *
+     * @param {Function} dispatch - The Redux dispatch function.
+     * @returns {Props}
+     */
+    _mapDispatchToProps(dispatch: Function): $Shape<Props> {
+        return {
+            _onSetMessageRecipient: participant => {
+                dispatch(setPrivateMessageRecipient(participant));
+            }
+        };
+    }
+
+    /**
+     * Maps part of the Redux store to the props of this component.
+     *
+     * BROKEN.
+     *
+     * @param {Object} state - The Redux state.
+     * @param {Props} ownProps - The own props of the component.
+     * @returns {Props}
+     */
+    _mapStateToProps(state: Object, ownProps: Props): $Shape<Props> {
+        return {
+            _participant: getParticipantById(state, ownProps.participantID)
+        };
+    }
+
 }
 
-export default translate(connect()(ChatInput));
+export default translate(connect(_mapStateToProps, _mapDispatchToProps)(ChatInput));
+

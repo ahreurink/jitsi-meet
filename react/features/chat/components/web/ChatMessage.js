@@ -31,6 +31,7 @@ class ChatMessage extends AbstractChatMessage<Props> {
 
         content.forEach(i => {
             if (typeof i === 'string') {
+                console.log(this.props._participants);
                 processedMessage.push(<Linkify key = { i }>{ i }</Linkify>);
             } else {
                 processedMessage.push(i);
