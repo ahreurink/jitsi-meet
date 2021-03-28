@@ -257,8 +257,8 @@ class ChatInput extends Component<Props, State> {
 
                 if (name === firstWordAfterAt) {
                     console.log(`SET PARTICIPANT: ${name}`);
-                    console.log(this.props.participants.filter(e => e.name === name));
-                    this.props._onSetMessageRecipient(this.props.participants.filter(e => e.name === name));
+                    console.log(this.props.participants.filter(e => e.name === name)[0]);
+                    this.props._onSetMessageRecipient(this.props.participants.filter(e => e.name === name)[0]);
                     userFound = true;
                     break;
                 }
