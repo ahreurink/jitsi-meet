@@ -1,7 +1,7 @@
 // @flow
 
+import ReactTextareaAutocomplete from '@webscopeio/react-textarea-autocomplete';
 import React, { Component } from 'react';
-import TextareaAutosize from 'react-textarea-autosize';
 import type { Dispatch } from 'redux';
 
 import { isMobileBrowser } from '../../../base/environment/utils';
@@ -14,6 +14,7 @@ import {
     _mapDispatchToProps,
     _mapStateToProps
 } from '../AbstractChatPrivacyDialog';
+import "@webscopeio/react-textarea-autocomplete/style.css";
 
 import SmileysPanel from './SmileysPanel';
 
@@ -67,7 +68,12 @@ type State = {
     /**
      * Whether or not the smiley selector is visible.
      */
-    showSmileysPanel: boolean
+    showSmileysPanel: boolean,
+
+    /**
+     * 
+     */
+    userNameSuggestionList: string[]
 };
 
 /**
@@ -122,8 +128,10 @@ class ChatInput extends Component<Props, State> {
      * @returns {ReactElement}
      */
     render() {
+        console.log(this.state.userNameSuggestionList);
         const smileysPanelClassName = `${this.state.showSmileysPanel
             ? 'show-smileys' : 'hide-smileys'} smileys-panel`;
+        const Item = ({ entity: {name} }) => <div>{`${name}`}</div>;
 
         return (
             <div className = { `chat-input-container${this.state.message.trim().length ? ' populated' : ''}` }>
@@ -144,7 +152,27 @@ class ChatInput extends Component<Props, State> {
                         </div>
                     </div>
                     <div className = 'usrmsg-form'>
-                        <TextareaAutosize
+                        <div className = 'container'>
+                            <ReactTextareaAutocomplete
+                                id = 'usermsg'
+                                // inputRef = { this._setTextAreaRef }
+                                loadingComponent = {() => <span>Loading</span>}
+                                //maxRows = { 5 }
+                                movePopupAsYouType
+                                onChange = { this._onMessageChange }
+                                // onHeightChange = { this.props.onResize }
+                                onKeyDown = { this._onDetectSubmit }
+                                placeholder = { this.props.t('chat.messagebox') }
+                                trigger = {{
+                                    '@': {
+                                        dataProvider: token => this.state.userNameSuggestionList,
+                                        component: Item,
+                                        output: (item, trigger) => item.name
+                                    }
+                                }}
+                                value = { this.state.message } />
+                        </div>
+                        {/* <TextareaAutosize
                             id = 'usermsg'
                             inputRef = { this._setTextAreaRef }
                             maxRows = { 5 }
@@ -152,7 +180,7 @@ class ChatInput extends Component<Props, State> {
                             onHeightChange = { this.props.onResize }
                             onKeyDown = { this._onDetectSubmit }
                             placeholder = { this.props.t('chat.messagebox') }
-                            value = { this.state.message } />
+                            value = { this.state.message } /> */}
                     </div>
                     <div className = 'send-button-container'>
                         <div
@@ -226,7 +254,6 @@ class ChatInput extends Component<Props, State> {
      * @returns {void}
      */
     _onMessageChange(event) {
-        const participantsNames = this.props.participants.map(e => e.name);
         const input = event.target.value;
 
         if (input.startsWith('@')) {
@@ -235,29 +262,25 @@ class ChatInput extends Component<Props, State> {
 
             if (firstWordAfterAt === '') {
                 this.setState({ message: event.target.value });
-
                 return;
             }
 
-            // Search partial
-            for (let i = 0; i < participantsNames.length; i++) {
-                const name = participantsNames[i];
-
-                // HINTING
-                if (name.includes(firstWordAfterAt)) {
-                    console.log(name);
-                    console.log('YAY WE ARE STILL WORTHY');
-
+            const participantsNames = this.props.participants.map(e => e.name);
+            console.log(participantsNames);
+            let userNameList = [];
+            console.log(firstWordAfterAt);
+            for (let name of participantsNames) {
+                if (firstWordAfterAt == null || name.includes(firstWordAfterAt)) {
+                    userNameList.push({'name': '@' + name});
                 }
             }
+            this.setState({userNameSuggestionList: userNameList});
 
             // Full, set recipient
             for (let i = 0; i < participantsNames.length; i++) {
                 const name = participantsNames[i];
 
                 if (name === firstWordAfterAt) {
-                    console.log(`SET PARTICIPANT: ${name}`);
-                    console.log(this.props.participants.filter(e => e.name === name)[0]);
                     this.props._onSetMessageRecipient(this.props.participants.filter(e => e.name === name)[0]);
                     userFound = true;
                     break;
