@@ -2,6 +2,7 @@
 
 import ReactTextareaAutocomplete from '@webscopeio/react-textarea-autocomplete';
 import React, { Component } from 'react';
+import TextareaAutosize from 'react-textarea-autosize';
 import type { Dispatch } from 'redux';
 
 import { isMobileBrowser } from '../../../base/environment/utils';
@@ -14,7 +15,7 @@ import {
     _mapDispatchToProps,
     _mapStateToProps
 } from '../AbstractChatPrivacyDialog';
-import "@webscopeio/react-textarea-autocomplete/style.css";
+import '@webscopeio/react-textarea-autocomplete/style.css';
 
 import SmileysPanel from './SmileysPanel';
 
@@ -71,10 +72,31 @@ type State = {
     showSmileysPanel: boolean,
 
     /**
-     * 
+     * The list of usernames to visualize when typing @.
      */
-    userNameSuggestionList: string[]
+    userNameSuggestionList: string[],
+
+    /**
+     * Receiver of the private message, concatenated with @.
+     */
+    selectedPrivateMessageReceiverName: string
 };
+
+
+const textareaAutosizeRef = newProps =>
+    React.forwardRef((props, ref) => {
+        const { onResize, _onMessageChange, message, _onDetectSubmit } = newProps;
+
+        return (<TextareaAutosize
+            autoFocus = { true }
+            id = 'usermsg'
+            inputRef = { ref }
+            maxRows = { 5 }
+            onChange = { _onMessageChange }
+            onHeightChange = { onResize }
+            onKeyDown = { _onDetectSubmit }
+            value = { message } />);
+    });
 
 /**
  * Implements a React Component for drafting and submitting a chat message.
@@ -128,10 +150,9 @@ class ChatInput extends Component<Props, State> {
      * @returns {ReactElement}
      */
     render() {
-        console.log(this.state.userNameSuggestionList);
         const smileysPanelClassName = `${this.state.showSmileysPanel
             ? 'show-smileys' : 'hide-smileys'} smileys-panel`;
-        const Item = ({ entity: {name} }) => <div>{`${name}`}</div>;
+        const Item = ({ entity: { name } }) => <div>{`${name}`}</div>;
 
         return (
             <div className = { `chat-input-container${this.state.message.trim().length ? ' populated' : ''}` }>
@@ -152,26 +173,27 @@ class ChatInput extends Component<Props, State> {
                         </div>
                     </div>
                     <div className = 'usrmsg-form'>
-                        <div className = 'container'>
-                            <ReactTextareaAutocomplete
-                                id = 'usermsg'
-                                // inputRef = { this._setTextAreaRef }
-                                loadingComponent = {() => <span>Loading</span>}
-                                //maxRows = { 5 }
-                                movePopupAsYouType
-                                onChange = { this._onMessageChange }
-                                // onHeightChange = { this.props.onResize }
-                                onKeyDown = { this._onDetectSubmit }
-                                placeholder = { this.props.t('chat.messagebox') }
-                                trigger = {{
-                                    '@': {
-                                        dataProvider: token => this.state.userNameSuggestionList,
-                                        component: Item,
-                                        output: (item, trigger) => item.name
-                                    }
-                                }}
-                                value = { this.state.message } />
-                        </div>
+                        {/* <div className = 'container'> */}
+                        <ReactTextareaAutocomplete
+                            id = 'usermsg'
+                            loadingComponent = { () => <span>Loading</span> }
+                            movePopupAsYouType = { true }
+                            placeholder = { this.props.t('chat.messagebox') }
+                            textAreaComponent = { textareaAutosizeRef(
+                                { onResize: this.props.onResize,
+                                    message: this.state.message,
+                                    _onMessageChange: this._onMessageChange,
+                                    _onDetectSubmit: this._onDetectSubmit
+                                }) }
+                            trigger = {{
+                                '@': {
+                                    dataProvider: token => this.state.userNameSuggestionList,
+                                    component: Item,
+                                    output: (item, trigger) => item.name
+                                }
+                            }}
+                            value = { this.state.message } />
+                        {/* </div> */}
                         {/* <TextareaAutosize
                             id = 'usermsg'
                             inputRef = { this._setTextAreaRef }
@@ -201,7 +223,9 @@ class ChatInput extends Component<Props, State> {
      * @returns {void}
      */
     _focus() {
-        this._textArea && this._textArea.focus();
+        console.log('FOCUS EVERYTHING');
+
+        // this._textArea && this._textArea.focus();
     }
 
 
@@ -213,9 +237,16 @@ class ChatInput extends Component<Props, State> {
      * @returns {void}
      */
     _onSubmitMessage() {
-        const trimmed = this.state.message.trim();
+        console.log('ON SUBMIT MESSAGE');
+        console.log(this.state.message);
+        let trimmed = this.state.message.trim();
 
         if (trimmed) {
+
+            // Remove @name from message
+            if (this.state.selectedPrivateMessageReceiverName) {
+                trimmed = trimmed.replace(`${this.state.selectedPrivateMessageReceiverName} `, '');
+            }
             this.props.onSend(trimmed);
 
             this.setState({ message: '' });
@@ -236,10 +267,11 @@ class ChatInput extends Component<Props, State> {
      * @returns {void}
      */
     _onDetectSubmit(event) {
+        console.log('OnDetectSubmit');
         if (event.keyCode === 13
             && event.shiftKey === false) {
-            event.preventDefault();
 
+            event.preventDefault();
             this._onSubmitMessage();
         }
     }
@@ -257,40 +289,43 @@ class ChatInput extends Component<Props, State> {
         const input = event.target.value;
 
         if (input.startsWith('@')) {
-            let userFound = false;
             const firstWordAfterAt = input.substring(1).split(' ')[0];
 
             if (firstWordAfterAt === '') {
                 this.setState({ message: event.target.value });
+
                 return;
             }
 
             const participantsNames = this.props.participants.map(e => e.name);
-            console.log(participantsNames);
-            let userNameList = [];
-            console.log(firstWordAfterAt);
-            for (let name of participantsNames) {
-                if (firstWordAfterAt == null || name.includes(firstWordAfterAt)) {
-                    userNameList.push({'name': '@' + name});
+            const userNameList = [];
+
+            for (const name of participantsNames) {
+                if (firstWordAfterAt === null || name.includes(firstWordAfterAt)) {
+                    userNameList.push({ 'name': `@${name}` });
                 }
             }
-            this.setState({userNameSuggestionList: userNameList});
+            this.setState({ userNameSuggestionList: userNameList });
+            let userFound = false;
 
-            // Full, set recipient
             for (let i = 0; i < participantsNames.length; i++) {
                 const name = participantsNames[i];
 
                 if (name === firstWordAfterAt) {
                     this.props._onSetMessageRecipient(this.props.participants.filter(e => e.name === name)[0]);
+                    this.setState({ selectedPrivateMessageReceiverName: `@${name}` });
                     userFound = true;
                     break;
                 }
             }
+
             if (!userFound) {
                 this.props._onSetMessageRecipient(null);
+                this.setState({ selectedPrivateMessageReceiverName: null });
             }
         }
-        this.setState({ message: event.target.value });
+
+        this.setState({ message: input });
     }
 
     _onSmileySelect: (string) => void;
@@ -336,6 +371,7 @@ class ChatInput extends Component<Props, State> {
      * @returns {void}
      */
     _setTextAreaRef(textAreaElement: ?HTMLTextAreaElement) {
+        console.log('Set text area ref');
         this._textArea = textAreaElement;
     }
 
