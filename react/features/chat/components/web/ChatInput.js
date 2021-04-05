@@ -87,8 +87,13 @@ const textareaAutosizeRef = newProps =>
     React.forwardRef((props, ref) => {
         const { onResize, _onMessageChange, message, _onDetectSubmit } = newProps;
 
+        if (ref === null) {
+            console.log('REF IS NULL');
+
+            return;
+        }
+
         return (<TextareaAutosize
-            autoFocus = { true }
             id = 'usermsg'
             inputRef = { ref }
             maxRows = { 5 }
@@ -179,6 +184,7 @@ class ChatInput extends Component<Props, State> {
                             loadingComponent = { () => <span>Loading</span> }
                             movePopupAsYouType = { true }
                             placeholder = { this.props.t('chat.messagebox') }
+                            ref = { this._setTextAreaRef }
                             textAreaComponent = { textareaAutosizeRef(
                                 { onResize: this.props.onResize,
                                     message: this.state.message,
@@ -225,7 +231,7 @@ class ChatInput extends Component<Props, State> {
     _focus() {
         console.log('FOCUS EVERYTHING');
 
-        // this._textArea && this._textArea.focus();
+        this._textArea && this._textArea.focus();
     }
 
 
@@ -268,6 +274,7 @@ class ChatInput extends Component<Props, State> {
      */
     _onDetectSubmit(event) {
         console.log('OnDetectSubmit');
+        this._focus();
         if (event.keyCode === 13
             && event.shiftKey === false) {
 
@@ -370,7 +377,7 @@ class ChatInput extends Component<Props, State> {
      * @private
      * @returns {void}
      */
-    _setTextAreaRef(textAreaElement: ?HTMLTextAreaElement) {
+    _setTextAreaRef(textAreaElement) {
         console.log('Set text area ref');
         this._textArea = textAreaElement;
     }
