@@ -10,7 +10,7 @@ import { translate } from '../../../base/i18n';
 import { Icon, IconPlane, IconSmile } from '../../../base/icons';
 import { getParticipantById } from '../../../base/participants';
 import { connect } from '../../../base/redux';
-import { sendMessage, setPrivateMessageRecipient } from '../../actions.any';
+import { setPrivateMessageRecipient } from '../../actions.any';
 import {
     _mapDispatchToProps,
     _mapStateToProps
@@ -96,7 +96,6 @@ const textareaAutosizeRef = newProps =>
             onChange = { _onMessageChange }
             onHeightChange = { onResize }
             onKeyDown = { _onDetectSubmit }
-            // ref = {  } //TODO add ref link to lower 
             value = { message } />);
     });
 
@@ -159,7 +158,7 @@ class ChatInput extends Component<Props, State> {
             { onResize: this.props.onResize,
                 message: this.state.message,
                 _onMessageChange: this._onMessageChange,
-                _onDetectSubmit: this._onDetectSubmit,
+                _onDetectSubmit: this._onDetectSubmit
             });
 
         return (
@@ -184,15 +183,17 @@ class ChatInput extends Component<Props, State> {
                         {/* <div className = 'container'> */}
                         <ReactTextareaAutocomplete
                             id = 'usermsg'
-                            loadingComponent = { () => <span>Loading</span> }
+                            loadingComponent = { this._loading }
                             movePopupAsYouType = { true }
                             placeholder = { this.props.t('chat.messagebox') }
                             ref = { this._setTextAreaRef }
                             textAreaComponent = { autoCompleteElement }
                             trigger = {{
                                 '@': {
+                                    // eslint-disable-next-line no-unused-vars
                                     dataProvider: token => this.state.userNameSuggestionList,
                                     component: Item,
+                                    // eslint-disable-next-line no-unused-vars
                                     output: (item, trigger) => item.name
                                 }
                             }}
@@ -218,6 +219,16 @@ class ChatInput extends Component<Props, State> {
                 </div>
             </div>
         );
+    }
+
+    /**
+     * Returns a loading placeholder in case the element is still loading.
+     *
+     * @returns {JSX.Element}
+     * @private
+     */
+    _loading() {
+        return <span>Loading</span>;
     }
 
     /**
