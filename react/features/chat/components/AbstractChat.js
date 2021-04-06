@@ -52,7 +52,12 @@ export type Props = {
     /**
      * Function to be used to translate i18n labels.
      */
-    t: Function
+    t: Function,
+
+    /**
+     * The list of participants.
+     */
+    _participants: Array<Object>,
 };
 
 /**

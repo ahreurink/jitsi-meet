@@ -8,13 +8,7 @@ import type { Dispatch } from 'redux';
 import { isMobileBrowser } from '../../../base/environment/utils';
 import { translate } from '../../../base/i18n';
 import { Icon, IconPlane, IconSmile } from '../../../base/icons';
-import { getParticipantById } from '../../../base/participants';
 import { connect } from '../../../base/redux';
-import { setPrivateMessageRecipient } from '../../actions.any';
-import {
-    _mapDispatchToProps,
-    _mapStateToProps
-} from '../AbstractChatPrivacyDialog';
 import '@webscopeio/react-textarea-autocomplete/style.css';
 
 import SmileysPanel from './SmileysPanel';
@@ -74,7 +68,7 @@ type State = {
     /**
      * The list of usernames to visualize when typing @.
      */
-    userNameSuggestionList: string[],
+    userNameSuggestionList: {},
 
     /**
      * Receiver of the private message, concatenated with @.
@@ -84,7 +78,7 @@ type State = {
 
 
 const textareaAutosizeRef = newProps =>
-    React.forwardRef<HTMLTextAreaElement>((props, ref) => {
+    React.forwardRef((props, ref) => {
         const { onResize, _onMessageChange, message, _onDetectSubmit } = newProps;
 
         console.log(ref);
@@ -109,7 +103,9 @@ class ChatInput extends Component<Props, State> {
 
     state = {
         message: '',
-        showSmileysPanel: false
+        showSmileysPanel: false,
+        userNameSuggestionList: {},
+        selectedPrivateMessageReceiverName: ''
     };
 
     /**
@@ -314,7 +310,7 @@ class ChatInput extends Component<Props, State> {
             }
 
             const participantsNames = this.props.participants.map(e => e.name);
-            const userNameList = [];
+            const userNameList = {};
 
             for (const name of participantsNames) {
                 if (firstWordAfterAt === null || name.includes(firstWordAfterAt)) {
@@ -337,7 +333,7 @@ class ChatInput extends Component<Props, State> {
 
             if (!userFound) {
                 this.props._onSetMessageRecipient(null);
-                this.setState({ selectedPrivateMessageReceiverName: null });
+                this.setState({ selectedPrivateMessageReceiverName: '' });
             }
         }
 
@@ -390,37 +386,7 @@ class ChatInput extends Component<Props, State> {
         console.log(textAreaElement);
         this._textArea = textAreaElement;
     }
-
-    /**
-     * Maps part of the props of this component to Redux actions.
-     *
-     * @param {Function} dispatch - The Redux dispatch function.
-     * @returns {Props}
-     */
-    _mapDispatchToProps(dispatch: Function): $Shape<Props> {
-        return {
-            _onSetMessageRecipient: participant => {
-                dispatch(setPrivateMessageRecipient(participant));
-            }
-        };
-    }
-
-    /**
-     * Maps part of the Redux store to the props of this component.
-     *
-     * BROKEN.
-     *
-     * @param {Object} state - The Redux state.
-     * @param {Props} ownProps - The own props of the component.
-     * @returns {Props}
-     */
-    _mapStateToProps(state: Object, ownProps: Props): $Shape<Props> {
-        return {
-            _participant: getParticipantById(state, ownProps.participantID)
-        };
-    }
-
 }
 
-export default translate(connect(_mapStateToProps, _mapDispatchToProps)(ChatInput));
+export default translate(connect()(ChatInput));
 
