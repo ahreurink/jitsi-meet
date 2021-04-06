@@ -52,7 +52,12 @@ export type Props = {
     /**
      * Function to be used to translate i18n labels.
      */
-    t: Function
+    t: Function,
+
+    /**
+     * The list of participants.
+     */
+    _participants: Array<Object>,
 };
 
 /**
@@ -97,16 +102,19 @@ export default class AbstractChat<P: Props> extends Component<P> {
  * @returns {{
  *     _isOpen: boolean,
  *     _messages: Array<Object>,
- *     _showNamePrompt: boolean
+ *     _showNamePrompt: boolean,
+ *     _participants: Array<Object>
  * }}
  */
 export function _mapStateToProps(state: Object) {
     const { isOpen, messages } = state['features/chat'];
     const _localParticipant = getLocalParticipant(state);
+    const participants = state['features/base/participants'];
 
     return {
         _isModal: window.innerWidth <= SMALL_WIDTH_THRESHOLD,
         _isOpen: isOpen,
+        _participants: participants.filter(p => !p.local),
         _messages: messages,
         _showNamePrompt: !_localParticipant.name
     };

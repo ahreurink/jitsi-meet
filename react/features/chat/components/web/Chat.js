@@ -120,7 +120,8 @@ class Chat extends AbstractChat<Props> {
                 <MessageRecipient />
                 <ChatInput
                     onResize = { this._onChatInputResize }
-                    onSend = { this._onSendMessage } />
+                    onSend = { this._onSendMessage }
+                    participants = { this.props._participants } />
                 <KeyboardAvoider />
             </>
         );
