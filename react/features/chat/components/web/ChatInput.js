@@ -84,14 +84,10 @@ type State = {
 
 
 const textareaAutosizeRef = newProps =>
-    React.forwardRef((props, ref) => {
+    React.forwardRef<HTMLTextAreaElement>((props, ref) => {
         const { onResize, _onMessageChange, message, _onDetectSubmit } = newProps;
 
-        if (ref === null) {
-            console.log('REF IS NULL');
-
-            return;
-        }
+        console.log(ref);
 
         return (<TextareaAutosize
             id = 'usermsg'
@@ -100,6 +96,7 @@ const textareaAutosizeRef = newProps =>
             onChange = { _onMessageChange }
             onHeightChange = { onResize }
             onKeyDown = { _onDetectSubmit }
+            // ref = {  } //TODO add ref link to lower 
             value = { message } />);
     });
 
@@ -158,6 +155,12 @@ class ChatInput extends Component<Props, State> {
         const smileysPanelClassName = `${this.state.showSmileysPanel
             ? 'show-smileys' : 'hide-smileys'} smileys-panel`;
         const Item = ({ entity: { name } }) => <div>{`${name}`}</div>;
+        const autoCompleteElement = textareaAutosizeRef(
+            { onResize: this.props.onResize,
+                message: this.state.message,
+                _onMessageChange: this._onMessageChange,
+                _onDetectSubmit: this._onDetectSubmit,
+            });
 
         return (
             <div className = { `chat-input-container${this.state.message.trim().length ? ' populated' : ''}` }>
@@ -185,12 +188,7 @@ class ChatInput extends Component<Props, State> {
                             movePopupAsYouType = { true }
                             placeholder = { this.props.t('chat.messagebox') }
                             ref = { this._setTextAreaRef }
-                            textAreaComponent = { textareaAutosizeRef(
-                                { onResize: this.props.onResize,
-                                    message: this.state.message,
-                                    _onMessageChange: this._onMessageChange,
-                                    _onDetectSubmit: this._onDetectSubmit
-                                }) }
+                            textAreaComponent = { autoCompleteElement }
                             trigger = {{
                                 '@': {
                                     dataProvider: token => this.state.userNameSuggestionList,
@@ -230,10 +228,10 @@ class ChatInput extends Component<Props, State> {
      */
     _focus() {
         console.log('FOCUS EVERYTHING');
+        console.log(this._textArea);
 
         this._textArea && this._textArea.focus();
     }
-
 
     _onSubmitMessage: () => void;
 
@@ -378,7 +376,7 @@ class ChatInput extends Component<Props, State> {
      * @returns {void}
      */
     _setTextAreaRef(textAreaElement) {
-        console.log('Set text area ref');
+        console.log(textAreaElement);
         this._textArea = textAreaElement;
     }
 
